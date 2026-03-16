@@ -1,0 +1,625 @@
+@extends('docs-editor::layout')
+
+@section('content')
+    {{-- Hidden delete form --}}
+    <form id="delete-form" action="{{ route('docs-editor.destroy') }}" method="POST" class="hidden">
+        @csrf
+        <input type="hidden" name="path" id="d-path">
+    </form>
+
+    <div class="flex gap-5 h-[calc(100vh-130px)]">
+        {{-- Sidebar --}}
+        <div class="w-72 flex-shrink-0 bg-white rounded-xl border border-gray-200 flex flex-col overflow-hidden shadow-sm">
+            <div class="px-3 py-3 border-b border-gray-100 space-y-2">
+                <div class="relative">
+                    <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="search" placeholder="Filter pages..." style="padding-left: 2rem; font-size: 0.75rem;">
+                </div>
+                <button type="button" id="new-page-btn"
+                        class="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    New Page
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-2 py-2" id="tree">
+                <ul class="list-none space-y-0.5">
+                    {!! $tree !!}
+                </ul>
+            </div>
+        </div>
+
+        {{-- Main Panel --}}
+        <div class="flex-1 flex flex-col min-w-0">
+
+            {{-- Empty State --}}
+            <div class="flex-1 flex items-center justify-center" id="empty-state">
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <p class="text-sm text-gray-500">Select a page to edit</p>
+                    <p class="text-xs text-gray-400 mt-1">or create a new one</p>
+                </div>
+            </div>
+
+            {{-- Edit Form --}}
+            <form action="{{ route('docs-editor.update') }}" method="POST"
+                  class="hidden flex-1 flex flex-col" id="edit-form">
+                @csrf
+                <input type="hidden" name="path" id="f-path">
+                <input type="hidden" name="uploaded_images" id="f-uploaded-images">
+
+                {{-- Header --}}
+                <div class="bg-white rounded-t-xl border border-gray-200 px-5 py-3 flex items-center justify-between shadow-sm">
+                    <div class="min-w-0 mr-4">
+                        <h2 class="text-sm font-semibold text-gray-800 truncate capitalize" id="editor-title"></h2>
+                        <p class="text-xs text-gray-400 font-mono truncate mt-0.5" id="editor-path"></p>
+                    </div>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <button type="button" id="delete-btn"
+                                class="px-3 py-1.5 text-xs border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition font-medium">
+                            Delete
+                        </button>
+                        <button type="submit" id="submit-edit-btn" disabled
+                                class="px-4 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                            Create PR
+                        </button>
+                    </div>
+                </div>
+
+                {{-- SEO --}}
+                <div class="bg-white border-x border-gray-200 px-5 py-3">
+                    <details class="group seo-details" id="seo-details-edit">
+                        <summary class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest cursor-pointer select-none flex items-center gap-1.5 hover:text-gray-600 transition">
+                            <svg class="w-3 h-3 transition group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            SEO Settings
+                        </summary>
+                        <div class="mt-4 space-y-3">
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Title</label>
+                                    <input type="text" name="title" id="f-title"
+                                           class="edit-field" placeholder="Auto-generated from H1 heading">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Description</label>
+                                    <input type="text" name="description" id="f-description"
+                                           class="edit-field" placeholder="Auto-generated from page content">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Keywords</label>
+                                    <input type="text" name="keywords" id="f-keywords"
+                                           class="edit-field" placeholder="e.g. voip, pbx, phone system">
+                                </div>
+                            </div>
+                            <label class="flex items-center gap-2 cursor-pointer w-fit">
+                                <input type="checkbox" name="noindex" id="f-noindex" value="1"
+                                       class="edit-field rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                                <span class="text-xs text-gray-600">Hide from search engines</span>
+                            </label>
+                        </div>
+                    </details>
+                </div>
+
+                {{-- Content --}}
+                <div class="flex-1 bg-white rounded-b-xl border border-t-0 border-gray-200 flex flex-col overflow-hidden shadow-sm">
+                    <div class="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
+                        <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                            <button type="button" data-tab="editor" class="tab-btn px-3 py-1 text-[11px] font-medium rounded-md bg-white text-gray-700 shadow-sm transition">Editor</button>
+                            <button type="button" data-tab="preview" class="tab-btn px-3 py-1 text-[11px] font-medium rounded-md text-gray-500 hover:text-gray-700 transition">Preview</button>
+                            <button type="button" data-tab="split" class="tab-btn px-3 py-1 text-[11px] font-medium rounded-md text-gray-500 hover:text-gray-700 transition">Split</button>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <label class="text-[11px] text-gray-500 hover:text-blue-600 font-medium cursor-pointer flex items-center gap-1 transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                Upload Image
+                                <input type="file" accept="image/*" id="image-upload" class="hidden" multiple>
+                            </label>
+                            <button type="button" id="fullscreen-btn" class="text-gray-400 hover:text-gray-700 transition" title="Toggle fullscreen (Esc to exit)">
+                                <svg id="fullscreen-icon-expand" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                                <svg id="fullscreen-icon-shrink" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4H4m0 0l5 5M9 15v5H4m0 0l5-5m6-1v5h5m0 0l-5-5m0-4V4h5m0 0l-5 5"/></svg>
+                            </button>
+                            <span class="text-[11px] text-gray-300" id="char-count"></span>
+                            <a id="view-live-link" href="#" target="_blank" class="hidden text-[11px] text-blue-500 hover:text-blue-700 font-medium flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                View Live
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex overflow-hidden" id="content-panels">
+                        <textarea name="content" id="f-content"
+                                  class="edit-field flex-1 w-full border-0 font-mono text-[13px] leading-relaxed resize-none p-4"
+                                  style="border: none; border-radius: 0;"></textarea>
+                        <div id="preview-pane" class="hidden flex-1 overflow-y-auto p-6 prose prose-sm prose-gray max-w-none border-l border-gray-100"></div>
+                    </div>
+                </div>
+            </form>
+
+            {{-- Create Form --}}
+            <form action="{{ route('docs-editor.store') }}" method="POST"
+                  class="hidden flex-1 flex flex-col" id="create-form">
+                @csrf
+
+                <div class="bg-white rounded-t-xl border border-gray-200 px-5 py-3 flex items-center justify-between shadow-sm">
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-800">New Page</h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Create a new documentation page</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" id="cancel-create-btn"
+                                class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition font-medium">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm">
+                            Create PR
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white border-x border-gray-200 px-5 py-4 space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Parent Folder</label>
+                            <select name="folder" id="c-folder"></select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">
+                                Filename <span class="text-gray-400 normal-case tracking-normal">(kebab-case, no .md)</span>
+                            </label>
+                            <input type="text" name="filename" id="c-filename" required
+                                   placeholder="my-new-page" pattern="[a-z0-9-]+">
+                        </div>
+                    </div>
+
+                    <details class="group" open>
+                        <summary class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest cursor-pointer select-none flex items-center gap-1.5 hover:text-gray-600 transition">
+                            <svg class="w-3 h-3 transition group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            SEO Settings
+                        </summary>
+                        <div class="mt-4 grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Title</label>
+                                <input type="text" name="title" placeholder="Optional">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Description</label>
+                                <input type="text" name="description" placeholder="Optional">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Keywords</label>
+                                <input type="text" name="keywords" placeholder="Optional">
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="flex-1 bg-white rounded-b-xl border border-t-0 border-gray-200 flex flex-col overflow-hidden shadow-sm">
+                    <div class="px-4 py-2 border-b border-gray-100">
+                        <span class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Markdown</span>
+                    </div>
+                    <textarea name="content" id="c-content" required
+                              class="flex-1 w-full border-0 font-mono text-[13px] leading-relaxed resize-none p-4"
+                              style="border: none; border-radius: 0;"
+                              placeholder="# Page Title&#10;&#10;Start writing..."></textarea>
+                </div>
+            </form>
+
+            {{-- Loading --}}
+            <div class="hidden items-center justify-center" id="loading-state">
+                <svg class="animate-spin h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const liveBaseUrl = @json($liveUrl);
+        const docsPrefix = @json($docsPrefix ?? '');
+        const md = window.markdownit({ html: true, linkify: true, typographer: true });
+        let currentTab = localStorage.getItem('docs-editor-tab') || 'editor';
+        let previewTimer = null;
+
+        function switchTab(tab) {
+            currentTab = tab;
+            localStorage.setItem('docs-editor-tab', tab);
+            const editor = document.getElementById('f-content');
+            const preview = document.getElementById('preview-pane');
+            const btns = document.querySelectorAll('.tab-btn');
+
+            btns.forEach(b => {
+                b.classList.remove('bg-white', 'text-gray-700', 'shadow-sm');
+                b.classList.add('text-gray-500');
+            });
+            document.querySelector('[data-tab="' + tab + '"]')?.classList.add('bg-white', 'text-gray-700', 'shadow-sm');
+            document.querySelector('[data-tab="' + tab + '"]')?.classList.remove('text-gray-500');
+
+            if (tab === 'editor') {
+                editor.classList.remove('hidden');
+                editor.style.flex = '1';
+                preview.classList.add('hidden');
+            } else if (tab === 'preview') {
+                editor.classList.add('hidden');
+                preview.classList.remove('hidden');
+                preview.style.flex = '1';
+                renderPreview();
+            } else {
+                editor.classList.remove('hidden');
+                editor.style.flex = '1';
+                preview.classList.remove('hidden');
+                preview.style.flex = '1';
+                renderPreview();
+            }
+        }
+
+        function renderPreview() {
+            const content = document.getElementById('f-content').value;
+            const preview = document.getElementById('preview-pane');
+            let html = md.render(content);
+            preview.innerHTML = html;
+
+            // Images: try local first, fall back to production
+            preview.querySelectorAll('img').forEach(function (img) {
+                const src = img.getAttribute('src');
+                if (src && src.startsWith('/docs-media/')) {
+                    img.src = src;
+                    img.onerror = function () {
+                        this.src = liveBaseUrl + src.replace('/docs-media', '/docs-media');
+                        this.onerror = null;
+                    };
+                }
+            });
+        }
+
+        function schedulePreview() {
+            if (currentTab === 'editor') return;
+            clearTimeout(previewTimer);
+            previewTimer = setTimeout(renderPreview, 300);
+        }
+
+        document.querySelectorAll('.tab-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                switchTab(this.dataset.tab);
+            });
+        });
+
+        let isDirty = false;
+        let originalValues = {};
+
+        function setDirty(dirty) {
+            isDirty = dirty;
+            const btn = document.getElementById('submit-edit-btn');
+            if (btn) btn.disabled = !dirty;
+        }
+
+        function storeOriginals() {
+            originalValues = {
+                title: document.getElementById('f-title').value,
+                description: document.getElementById('f-description').value,
+                keywords: document.getElementById('f-keywords').value,
+                noindex: document.getElementById('f-noindex').checked,
+                content: document.getElementById('f-content').value,
+            };
+            setDirty(false);
+            updateCharCount();
+        }
+
+        function checkDirty() {
+            const dirty = (
+                document.getElementById('f-title').value !== originalValues.title ||
+                document.getElementById('f-description').value !== originalValues.description ||
+                document.getElementById('f-keywords').value !== originalValues.keywords ||
+                document.getElementById('f-noindex').checked !== originalValues.noindex ||
+                document.getElementById('f-content').value !== originalValues.content
+            );
+            setDirty(dirty);
+        }
+
+        function updateCharCount() {
+            const el = document.getElementById('f-content');
+            const count = document.getElementById('char-count');
+            if (el && count) {
+                count.textContent = el.value.length.toLocaleString() + ' chars';
+            }
+        }
+
+        document.querySelectorAll('.edit-field').forEach(function (el) {
+            el.addEventListener('input', function () { checkDirty(); updateCharCount(); });
+            el.addEventListener('change', checkDirty);
+        });
+
+        // Dedicated preview listener on content textarea
+        document.getElementById('f-content').addEventListener('input', schedulePreview);
+        document.getElementById('f-content').addEventListener('keyup', schedulePreview);
+
+        window.addEventListener('beforeunload', function (e) {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        function showPanel(id) {
+            ['empty-state', 'edit-form', 'create-form', 'loading-state'].forEach(function (panelId) {
+                const el = document.getElementById(panelId);
+                el.classList.add('hidden');
+                el.classList.remove('flex');
+            });
+            const target = document.getElementById(id);
+            target.classList.remove('hidden');
+            target.classList.add('flex');
+        }
+
+        // Tree toggle
+        document.querySelectorAll('.tree-toggle').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const ul = this.parentElement.querySelector('ul');
+                const icon = this.querySelector('.toggle-icon');
+                if (ul) {
+                    ul.classList.toggle('hidden');
+                    icon.classList.toggle('rotate-90');
+                }
+            });
+        });
+
+        // File click
+        document.querySelectorAll('.tree-file').forEach(function (link) {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (isDirty && !confirm('You have unsaved changes. Discard?')) return;
+
+                document.querySelectorAll('.tree-file').forEach(f => f.classList.remove('bg-blue-50', 'text-blue-700', 'font-semibold'));
+                this.classList.add('bg-blue-50', 'text-blue-700', 'font-semibold');
+
+                showPanel('loading-state');
+
+                fetch('{{ route("docs-editor.edit") }}?path=' + encodeURIComponent(this.dataset.path), {
+                    headers: { 'Accept': 'application/json' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('f-path').value = data.path;
+                    document.getElementById('f-title').value = data.title || '';
+                    document.getElementById('f-description').value = data.description || '';
+                    document.getElementById('f-keywords').value = data.keywords || '';
+                    document.getElementById('f-noindex').checked = !!data.noindex;
+                    document.getElementById('f-content').value = data.content;
+                    document.getElementById('editor-title').textContent = data.path.split('/').pop().replace('.md', '').replaceAll('-', ' ');
+                    document.getElementById('editor-path').textContent = data.path.replace(docsPrefix + '/', '');
+
+                    // View Live link
+                    const liveLink = document.getElementById('view-live-link');
+                    if (liveBaseUrl) {
+                        const slug = data.path.replace(docsPrefix + '/', '').replace('.md', '');
+                        liveLink.href = liveBaseUrl + '/' + slug;
+                        liveLink.classList.remove('hidden');
+                        liveLink.classList.add('flex');
+                    } else {
+                        liveLink.classList.add('hidden');
+                        liveLink.classList.remove('flex');
+                    }
+
+                    resetUploadedImages();
+                    switchTab(currentTab);
+                    storeOriginals();
+                    showPanel('edit-form');
+                })
+                .catch(err => {
+                    showPanel('empty-state');
+                    alert('Failed to load: ' + err.message);
+                });
+            });
+        });
+
+        // Delete
+        document.getElementById('delete-btn')?.addEventListener('click', function () {
+            const path = document.getElementById('f-path').value;
+            const name = path.split('/').pop();
+            if (!confirm('Delete "' + name + '"? This will create a PR to remove it.')) return;
+
+            isDirty = false;
+            document.getElementById('d-path').value = path;
+            document.getElementById('delete-form').submit();
+        });
+
+        // New Page
+        document.getElementById('new-page-btn').addEventListener('click', function () {
+            if (isDirty && !confirm('You have unsaved changes. Discard?')) return;
+            setDirty(false);
+            showPanel('loading-state');
+
+            fetch('{{ route("docs-editor.create") }}', { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    const select = document.getElementById('c-folder');
+                    select.innerHTML = '';
+                    data.folders.forEach(function (folder) {
+                        const opt = document.createElement('option');
+                        opt.value = folder;
+                        opt.textContent = folder.replace('website/docs', '/docs');
+                        select.appendChild(opt);
+                    });
+                    document.getElementById('c-filename').value = '';
+                    document.getElementById('c-content').value = '';
+                    showPanel('create-form');
+                })
+                .catch(err => {
+                    showPanel('empty-state');
+                    alert('Failed to load folders: ' + err.message);
+                });
+        });
+
+        document.getElementById('cancel-create-btn').addEventListener('click', function () {
+            showPanel('empty-state');
+        });
+
+        // Search
+        document.getElementById('search').addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            const files = document.querySelectorAll('.tree-file');
+            const folders = document.querySelectorAll('.tree-folder');
+
+            if (!query) {
+                files.forEach(f => f.style.display = '');
+                folders.forEach(f => {
+                    f.style.display = '';
+                    const ul = f.querySelector(':scope > ul');
+                    if (ul) ul.classList.remove('hidden');
+                    const icon = f.querySelector(':scope > .tree-toggle .toggle-icon');
+                    if (icon) icon.classList.add('rotate-90');
+                });
+                return;
+            }
+
+            files.forEach(f => {
+                f.style.display = f.textContent.toLowerCase().includes(query) ? '' : 'none';
+            });
+
+            [...folders].reverse().forEach(f => {
+                const ul = f.querySelector(':scope > ul');
+                if (!ul) return;
+                const hasVisible = ul.querySelector('.tree-file:not([style*="display: none"]), .tree-folder:not([style*="display: none"])');
+                f.style.display = hasVisible ? '' : 'none';
+                if (hasVisible) {
+                    ul.classList.remove('hidden');
+                    const icon = f.querySelector(':scope > .tree-toggle .toggle-icon');
+                    if (icon) icon.classList.add('rotate-90');
+                }
+            });
+        });
+
+        // Image upload
+        const uploadedImages = [];
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
+            || document.querySelector('input[name="_token"]')?.value;
+
+        function uploadImages(files) {
+            const docPath = document.getElementById('f-path').value;
+            if (!docPath) return;
+
+            Array.from(files).forEach(function (file) {
+                if (!file.type.startsWith('image/')) return;
+
+                const formData = new FormData();
+                formData.append('image', file);
+                formData.append('doc_path', docPath);
+                formData.append('_token', csrfToken);
+
+                // Insert placeholder
+                const textarea = document.getElementById('f-content');
+                const pos = textarea.selectionStart;
+                const placeholder = `![Uploading ${file.name}...]()`;
+                textarea.value = textarea.value.slice(0, pos) + placeholder + textarea.value.slice(pos);
+                checkDirty();
+                schedulePreview();
+
+                fetch('{{ route("docs-editor.uploadImage") }}', {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(r => r.json())
+                .then(data => {
+                    // Replace placeholder with actual markdown
+                    textarea.value = textarea.value.replace(placeholder, data.markdown);
+                    uploadedImages.push(data.repo_path);
+                    document.getElementById('f-uploaded-images').value = uploadedImages.join(',');
+                    checkDirty();
+                    schedulePreview();
+                })
+                .catch(err => {
+                    textarea.value = textarea.value.replace(placeholder, '');
+                    alert('Upload failed: ' + err.message);
+                });
+            });
+        }
+
+        // File picker
+        document.getElementById('image-upload').addEventListener('change', function () {
+            uploadImages(this.files);
+            this.value = '';
+        });
+
+        // Drag & drop on textarea
+        const contentArea = document.getElementById('f-content');
+        contentArea.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            this.classList.add('ring-2', 'ring-blue-300', 'bg-blue-50');
+        });
+        contentArea.addEventListener('dragleave', function () {
+            this.classList.remove('ring-2', 'ring-blue-300', 'bg-blue-50');
+        });
+        contentArea.addEventListener('drop', function (e) {
+            e.preventDefault();
+            this.classList.remove('ring-2', 'ring-blue-300', 'bg-blue-50');
+            if (e.dataTransfer.files.length) {
+                uploadImages(e.dataTransfer.files);
+            }
+        });
+
+        // Paste image from clipboard
+        contentArea.addEventListener('paste', function (e) {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            const imageFiles = [];
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) {
+                    imageFiles.push(items[i].getAsFile());
+                }
+            }
+            if (imageFiles.length) {
+                e.preventDefault();
+                uploadImages(imageFiles);
+            }
+        });
+
+        // Reset uploaded images on file switch
+        function resetUploadedImages() {
+            uploadedImages.length = 0;
+            document.getElementById('f-uploaded-images').value = '';
+        }
+
+        // Fullscreen
+        let isFullscreen = false;
+        const editForm = document.getElementById('edit-form');
+        const sidebar = document.querySelector('.w-72');
+        const mainNav = document.querySelector('nav');
+        const mainContainer = document.querySelector('main');
+
+        function toggleFullscreen() {
+            isFullscreen = !isFullscreen;
+            document.getElementById('fullscreen-icon-expand').classList.toggle('hidden', isFullscreen);
+            document.getElementById('fullscreen-icon-shrink').classList.toggle('hidden', !isFullscreen);
+
+            if (isFullscreen) {
+                sidebar.classList.add('hidden');
+                mainNav.classList.add('hidden');
+                mainContainer.classList.remove('py-5');
+                mainContainer.classList.add('py-0', 'px-0', 'max-w-none');
+                editForm.parentElement.style.height = '100vh';
+            } else {
+                sidebar.classList.remove('hidden');
+                mainNav.classList.remove('hidden');
+                mainContainer.classList.add('py-5');
+                mainContainer.classList.remove('py-0', 'px-0', 'max-w-none');
+                editForm.parentElement.style.height = '';
+            }
+        }
+
+        document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && isFullscreen) {
+                toggleFullscreen();
+            }
+        });
+
+        // SEO details open/close persistence
+        const seoDetails = document.getElementById('seo-details-edit');
+        if (localStorage.getItem('docs-seo-open') === 'true') {
+            seoDetails.setAttribute('open', '');
+        }
+        seoDetails.addEventListener('toggle', function () {
+            localStorage.setItem('docs-seo-open', this.open);
+        });
+    </script>
+@endsection
