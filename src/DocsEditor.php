@@ -8,7 +8,6 @@ use Closure;
 
 final class DocsEditor
 {
-    /** @var Closure|null */
     private static ?Closure $authCallback = null;
 
     public static function auth(Closure $callback): void

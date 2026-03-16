@@ -34,7 +34,6 @@ final class DocsController extends Controller
 
         return view('docs-editor::index', [
             'tree' => $tree,
-            'liveUrl' => rtrim(config('docs-editor.live_url', ''), '/'),
             'docsPrefix' => $this->files->relativeDocsPath(),
         ]);
     }

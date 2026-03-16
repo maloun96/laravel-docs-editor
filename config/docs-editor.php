@@ -12,11 +12,7 @@ return [
 
     'media_path' => env('DOCS_EDITOR_MEDIA_PATH', 'public/docs-media'),
 
-    'live_url' => env('DOCS_EDITOR_LIVE_URL', ''),
-
     'route' => [
         'prefix' => env('DOCS_EDITOR_ROUTE_PREFIX', 'admin/docs'),
     ],
-
-    'nova_menu' => env('DOCS_EDITOR_NOVA_MENU', false),
 ];

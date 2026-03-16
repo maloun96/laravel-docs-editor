@@ -120,10 +120,6 @@
                                 <svg id="fullscreen-icon-shrink" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4H4m0 0l5 5M9 15v5H4m0 0l5-5m6-1v5h5m0 0l-5-5m0-4V4h5m0 0l-5 5"/></svg>
                             </button>
                             <span class="text-[11px] text-gray-300" id="char-count"></span>
-                            <a id="view-live-link" href="#" target="_blank" class="hidden text-[11px] text-blue-500 hover:text-blue-700 font-medium flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                View Live
-                            </a>
                         </div>
                     </div>
                     <div class="flex-1 flex overflow-hidden" id="content-panels">
@@ -213,7 +209,6 @@
     </div>
 
     <script>
-        const liveBaseUrl = @json($liveUrl);
         const docsPrefix = @json($docsPrefix ?? '');
         const md = window.markdownit({ html: true, linkify: true, typographer: true });
         let currentTab = localStorage.getItem('docs-editor-tab') || 'editor';
@@ -257,17 +252,6 @@
             let html = md.render(content);
             preview.innerHTML = html;
 
-            // Images: try local first, fall back to production
-            preview.querySelectorAll('img').forEach(function (img) {
-                const src = img.getAttribute('src');
-                if (src && src.startsWith('/docs-media/')) {
-                    img.src = src;
-                    img.onerror = function () {
-                        this.src = liveBaseUrl + src.replace('/docs-media', '/docs-media');
-                        this.onerror = null;
-                    };
-                }
-            });
         }
 
         function schedulePreview() {
@@ -386,18 +370,6 @@
                     document.getElementById('f-content').value = data.content;
                     document.getElementById('editor-title').textContent = data.path.split('/').pop().replace('.md', '').replaceAll('-', ' ');
                     document.getElementById('editor-path').textContent = data.path.replace(docsPrefix + '/', '');
-
-                    // View Live link
-                    const liveLink = document.getElementById('view-live-link');
-                    if (liveBaseUrl) {
-                        const slug = data.path.replace(docsPrefix + '/', '').replace('.md', '');
-                        liveLink.href = liveBaseUrl + '/' + slug;
-                        liveLink.classList.remove('hidden');
-                        liveLink.classList.add('flex');
-                    } else {
-                        liveLink.classList.add('hidden');
-                        liveLink.classList.remove('flex');
-                    }
 
                     resetUploadedImages();
                     switchTab(currentTab);

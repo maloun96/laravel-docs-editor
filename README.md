@@ -36,7 +36,6 @@ DOCS_EDITOR_GITHUB_REPO=your-repo
 DOCS_EDITOR_GITHUB_BRANCH=main
 DOCS_EDITOR_DOCS_PATH=docs
 DOCS_EDITOR_MEDIA_PATH=public/docs-media
-DOCS_EDITOR_LIVE_URL=https://your-site.com/docs
 DOCS_EDITOR_ROUTE_PREFIX=admin/docs
 ```
 
@@ -50,9 +49,19 @@ DOCS_EDITOR_ROUTE_PREFIX=admin/docs
 | `github.base_branch` | Branch to create PRs against | `main` |
 | `docs_path` | Path to markdown files relative to `base_path()` | `docs` |
 | `media_path` | Path to media/images relative to `base_path()` | `public/docs-media` |
-| `live_url` | Base URL for "View Live" links (empty to hide) | — |
 | `route.prefix` | URL prefix for the editor | `admin/docs` |
-| `route.middleware` | Middleware for editor routes | `['web']` |
+
+### Authorization
+
+Register an auth callback in your `AppServiceProvider`:
+
+```php
+use Maloun96\DocsEditor\DocsEditor;
+
+DocsEditor::auth(function ($request) {
+    return $request->user()?->isAdmin();
+});
+```
 
 ## Publish views (optional)
 
