@@ -136,7 +136,7 @@ final class DocsController extends Controller
         try {
             $this->files->writeFile($path, $fileContent);
 
-            $imagePaths = array_filter(explode(',', $request->input('uploaded_images', '')));
+            $imagePaths = array_filter(explode(',', $request->input('uploaded_images') ?? ''));
             $prUrl = $this->github->createPullRequestForNewFile($path, $fileContent, $commitMessage, $imagePaths);
 
             return redirect()
@@ -172,7 +172,7 @@ final class DocsController extends Controller
         $commitMessage = "docs({$section}): update " . basename($request->input('path'), '.md');
 
         try {
-            $imagePaths = array_filter(explode(',', $request->input('uploaded_images', '')));
+            $imagePaths = array_filter(explode(',', $request->input('uploaded_images') ?? ''));
             $prUrl = $this->github->createPullRequestForUpdate(
                 $request->input('path'),
                 $fileContent,
