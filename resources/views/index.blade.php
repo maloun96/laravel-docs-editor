@@ -338,6 +338,13 @@
             }
         });
 
+        document.getElementById('edit-form').addEventListener('submit', function () {
+            isDirty = false;
+        });
+        document.getElementById('create-form').addEventListener('submit', function () {
+            isDirty = false;
+        });
+
         function showPanel(id) {
             ['empty-state', 'edit-form', 'create-form', 'loading-state'].forEach(function (panelId) {
                 const el = document.getElementById(panelId);
