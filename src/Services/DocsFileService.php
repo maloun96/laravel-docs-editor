@@ -13,7 +13,7 @@ final class DocsFileService
         private string $mediaPath,
     ) {}
 
-    /** @return array<int, array{path: string, name: string}> */
+    /** @return array<int, array{path: string, name: string, published: bool}> */
     public function listDocs(): array
     {
         $files = [];
@@ -85,9 +85,16 @@ final class DocsFileService
 
             $relativePath = $prefix . '/' . ltrim(str_replace($this->docsPath, '', $file->getPathname()), '/');
 
+            $published = false;
+            $content = File::get($file->getPathname());
+            if (preg_match('/\A---\s*\n(.+?)\n---/s', $content, $m)) {
+                $published = (bool) preg_match('/^published:\s*true\s*$/m', $m[1]);
+            }
+
             $files[] = [
                 'path' => $relativePath,
                 'name' => $file->getFilename(),
+                'published' => $published,
             ];
         }
 

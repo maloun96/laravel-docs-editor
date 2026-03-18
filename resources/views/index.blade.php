@@ -92,11 +92,18 @@
                                            class="edit-field" placeholder="e.g. voip, pbx, phone system">
                                 </div>
                             </div>
-                            <label class="flex items-center gap-2 cursor-pointer w-fit">
-                                <input type="checkbox" name="noindex" id="f-noindex" value="1"
-                                       class="edit-field rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
-                                <span class="text-xs text-gray-600">Hide from search engines</span>
-                            </label>
+                            <div class="flex items-center gap-6">
+                                <label class="flex items-center gap-2 cursor-pointer w-fit">
+                                    <input type="checkbox" name="published" id="f-published" value="1"
+                                           class="edit-field rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                                    <span class="text-xs text-gray-600">Published</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer w-fit">
+                                    <input type="checkbox" name="noindex" id="f-noindex" value="1"
+                                           class="edit-field rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                                    <span class="text-xs text-gray-600">Hide from search engines</span>
+                                </label>
+                            </div>
                         </div>
                     </details>
                 </div>
@@ -173,19 +180,26 @@
                             <svg class="w-3 h-3 transition group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             SEO Settings
                         </summary>
-                        <div class="mt-4 grid grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Title</label>
-                                <input type="text" name="title" placeholder="Optional">
+                        <div class="mt-4 space-y-3">
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Title</label>
+                                    <input type="text" name="title" placeholder="Optional">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Description</label>
+                                    <input type="text" name="description" placeholder="Optional">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Keywords</label>
+                                    <input type="text" name="keywords" placeholder="Optional">
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Description</label>
-                                <input type="text" name="description" placeholder="Optional">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Keywords</label>
-                                <input type="text" name="keywords" placeholder="Optional">
-                            </div>
+                            <label class="flex items-center gap-2 cursor-pointer w-fit">
+                                <input type="checkbox" name="published" value="1"
+                                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                                <span class="text-xs text-gray-600">Published</span>
+                            </label>
                         </div>
                     </details>
                 </div>
@@ -281,6 +295,7 @@
                 description: document.getElementById('f-description').value,
                 keywords: document.getElementById('f-keywords').value,
                 noindex: document.getElementById('f-noindex').checked,
+                published: document.getElementById('f-published').checked,
                 content: document.getElementById('f-content').value,
             };
             setDirty(false);
@@ -293,6 +308,7 @@
                 document.getElementById('f-description').value !== originalValues.description ||
                 document.getElementById('f-keywords').value !== originalValues.keywords ||
                 document.getElementById('f-noindex').checked !== originalValues.noindex ||
+                document.getElementById('f-published').checked !== originalValues.published ||
                 document.getElementById('f-content').value !== originalValues.content
             );
             setDirty(dirty);
@@ -367,6 +383,7 @@
                     document.getElementById('f-description').value = data.description || '';
                     document.getElementById('f-keywords').value = data.keywords || '';
                     document.getElementById('f-noindex').checked = !!data.noindex;
+                    document.getElementById('f-published').checked = !!data.published;
                     document.getElementById('f-content').value = data.content;
                     document.getElementById('editor-title').textContent = data.path.split('/').pop().replace('.md', '').replaceAll('-', ' ');
                     document.getElementById('editor-path').textContent = data.path.replace(docsPrefix + '/', '');

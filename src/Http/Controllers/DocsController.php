@@ -50,6 +50,7 @@ final class DocsController extends Controller
             'description' => $parsed['meta']['description'] ?? '',
             'keywords' => $parsed['meta']['keywords'] ?? '',
             'noindex' => $parsed['meta']['noindex'] ?? false,
+            'published' => $parsed['meta']['published'] ?? false,
             'content' => $parsed['body'],
         ];
 
@@ -119,6 +120,7 @@ final class DocsController extends Controller
             'description' => $request->input('description'),
             'keywords' => $request->input('keywords'),
             'noindex' => $request->boolean('noindex') ?: null,
+            'published' => $request->boolean('published') ?: null,
         ]);
 
         $body = $request->input('content');
@@ -161,6 +163,7 @@ final class DocsController extends Controller
             'description' => $request->input('description'),
             'keywords' => $request->input('keywords'),
             'noindex' => $request->boolean('noindex') ?: null,
+            'published' => $request->boolean('published') ?: null,
         ]);
 
         $body = $request->input('content');
@@ -231,6 +234,7 @@ final class DocsController extends Controller
                     $current['__files'][] = [
                         'name' => $part,
                         'path' => $doc['path'],
+                        'published' => $doc['published'] ?? false,
                     ];
                 } else {
                     if (! isset($current[$part])) {
@@ -273,10 +277,16 @@ final class DocsController extends Controller
         foreach ($files as $file) {
             $displayName = str_replace('-', ' ', basename($file['name'], '.md'));
             $escapedPath = e($file['path']);
+            $published = $file['published'] ?? false;
+            $textColor = $published ? 'text-gray-600' : 'text-gray-400';
+            $iconColor = $published ? 'text-gray-400' : 'text-gray-300';
             $html .= "<li>";
-            $html .= "<a href=\"#\" class=\"tree-file flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-blue-50 hover:text-blue-700 text-gray-600 transition\" style=\"padding-left: {$filePadding}px\" data-path=\"{$escapedPath}\">";
-            $html .= "<svg class=\"w-3.5 h-3.5 text-gray-400 flex-shrink-0\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\"/></svg>";
+            $html .= "<a href=\"#\" class=\"tree-file flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-blue-50 hover:text-blue-700 {$textColor} transition\" style=\"padding-left: {$filePadding}px\" data-path=\"{$escapedPath}\">";
+            $html .= "<svg class=\"w-3.5 h-3.5 {$iconColor} flex-shrink-0\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\"/></svg>";
             $html .= "<span class=\"text-xs truncate\">{$displayName}</span>";
+            if (! $published) {
+                $html .= "<span class=\"text-[9px] font-medium text-orange-400 uppercase tracking-wide flex-shrink-0\">Draft</span>";
+            }
             $html .= "</a>";
             $html .= "</li>";
         }
